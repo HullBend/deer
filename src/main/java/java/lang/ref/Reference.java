@@ -5,10 +5,10 @@ package java.lang.ref;
  * binary distribution!
  */
 public abstract class Reference<T> {
-	/**
-	 * @since 9
-	 */
+    /**
+     * @since 9
+     */
     public static void reachabilityFence(Object ref) {
-    	throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException();
     }
 }

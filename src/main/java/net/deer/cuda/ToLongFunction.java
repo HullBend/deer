@@ -7,12 +7,12 @@ package net.deer.cuda;
  *            the type of the input to the function
  */
 interface ToLongFunction<T> {
-	/**
-	 * Applies this function to the given argument.
-	 *
-	 * @param value
-	 *            the function argument
-	 * @return the function result
-	 */
-	long applyAsLong(T value);
+    /**
+     * Applies this function to the given argument.
+     *
+     * @param value
+     *            the function argument
+     * @return the function result
+     */
+    long applyAsLong(T value);
 }

@@ -6,29 +6,29 @@ package net.deer.cuda;
  */
 interface Address extends AutoCloseable {
 
-	/**
-	 * Was there already an attempt to release the underlying native resource?
-	 * 
-	 * @return {@code true} if a release of the underlying resource has already
-	 *         been attempted, otherwise {@code false}.
-	 */
-	boolean isClosed();
+    /**
+     * Was there already an attempt to release the underlying native resource?
+     * 
+     * @return {@code true} if a release of the underlying resource has already
+     *         been attempted, otherwise {@code false}.
+     */
+    boolean isClosed();
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	boolean equals(Object otherAddress);
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    boolean equals(Object otherAddress);
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	int hashCode();
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    int hashCode();
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	String toString();
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    String toString();
 }
