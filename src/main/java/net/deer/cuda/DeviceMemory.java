@@ -26,8 +26,9 @@ package net.deer.cuda;
  * device.
  * <p>
  * Data may be transferred between the device and the Java host via the various
- * {@code copyTo} or {@code copyFrom} methods. A buffer may be filled with a
- * specific pattern through use of one of the {@code fillXxx} methods.
+ * {@code transferToDevice} or {@code fetchToHost} methods. A buffer may be
+ * filled with a specific pattern through use of one of the {@code fillXxx}
+ * methods.
  * <p>
  * When no longer required, a DeviceMemory instance must be {@code close}d.
  */
@@ -61,6 +62,13 @@ public final class DeviceMemory implements AutoCloseable {
         this.parent = null;
     }
 
+    private DeviceMemory(DeviceMemory parent, int deviceId, long byteOffset, long length) {
+        this.deviceId = deviceId;
+        this.memoryAddress = null; // TODO new AtomicLong(byteOffset);
+        this.length = length;
+        this.parent = parent;
+    }
+
     Address getAddress() {
         // TODO
         throw new UnsupportedOperationException();
@@ -88,12 +96,156 @@ public final class DeviceMemory implements AutoCloseable {
     }
 
     /**
+     * Returns a sub-region of this buffer. The new buffer begins at the
+     * specified fromOffset and extends to the specified toOffset (exclusive).
+     *
+     * @param fromOffset
+     *            the byte offset of the start of the sub-region within this
+     *            buffer
+     * @param toOffset
+     *            the byte offset of the end of the sub-region within this
+     *            buffer
+     * @return the specified sub-region
+     * @throws IllegalArgumentException
+     *             if {@code fromOffset > toOffset}
+     * @throws IllegalStateException
+     *             if this buffer has been closed (see {@link #close()})
+     * @throws IndexOutOfBoundsException
+     *             if {@code fromOffset} is negative, {@code toOffset > length},
+     *             or the number of source bytes is larger than the length of
+     *             this buffer
+     */
+    public DeviceMemory slice(long fromOffset, long toOffset) {
+        if (fromOffset == 0 && toOffset == length) {
+            return this;
+        } else {
+            rangeCheck(length, fromOffset, toOffset);
+
+            return new DeviceMemory( // <br>
+                    parent != null ? parent : this, // <br>
+                    deviceId, // <br>
+                    -123456789L, // <br> //(getAddress() + fromOffset), // TODO
+                    (toOffset - fromOffset)); // <br>
+        }
+    }
+
+    /**
      * Returns the length in bytes of this buffer.
      *
      * @return the length in bytes of this buffer
      */
     public long getLength() {
         return length;
+    }
+
+    /**
+     * Copies all data from the specified {@code array} (on the Java host) to
+     * this buffer (on the device). Equivalent to
+     * 
+     * <pre>
+     * transferToDevice(array, 0, array.length);
+     * </pre>
+     *
+     * @param array
+     *            the source array
+     * @throws CudaException
+     *             if a CUDA exception occurs
+     * @throws IllegalStateException
+     *             if this buffer has been closed (see {@link #close()})
+     * @throws IndexOutOfBoundsException
+     *             if the number of source bytes is larger than the length of
+     *             this buffer
+     */
+    public void transferToDevice(float[] array) throws CudaException {
+        transferToDevice(array, 0, array.length);
+    }
+
+    /**
+     * Copies data from the specified {@code array} (on the Java host) to this
+     * buffer (on the device). Elements are read from {@code array} beginning at
+     * {@code fromIndex} continuing up to, but excluding, {@code toIndex}
+     * storing them in the same order in this buffer.
+     * <p>
+     * A sub-buffer may be created (see {@link #atOffset(long)}) when the data
+     * are to be copied somewhere other than the beginning of this buffer.
+     *
+     * @param array
+     *            the source array
+     * @param fromIndex
+     *            the source starting offset (inclusive)
+     * @param toIndex
+     *            the source ending offset (exclusive)
+     * @throws CudaException
+     *             if a CUDA exception occurs
+     * @throws IllegalArgumentException
+     *             if {@code fromIndex > toIndex}
+     * @throws IllegalStateException
+     *             if this buffer has been closed (see {@link #close()})
+     * @throws IndexOutOfBoundsException
+     *             if {@code fromIndex} is negative,
+     *             {@code toIndex > array.length}, or the number of source bytes
+     *             is larger than the length of this buffer
+     */
+    public void transferToDevice(float[] array, int fromIndex, int toIndex) throws CudaException {
+        rangeCheck(array.length, fromIndex, toIndex);
+        lengthCheck(toIndex - fromIndex, 2);
+        // copyFromHostFloat(deviceId, getAddress(), array, fromIndex, toIndex);
+        // // TODO
+    }
+
+    /**
+     * Copies data from this buffer (on the device) to the specified
+     * {@code array} (on the Java host). Equivalent to
+     * 
+     * <pre>
+     * fetchToHost(array, 0, array.length);
+     * </pre>
+     *
+     * @param array
+     *            the destination array
+     * @throws CudaException
+     *             if a CUDA exception occurs
+     * @throws IllegalStateException
+     *             if this buffer has been closed (see {@link #close()})
+     * @throws IndexOutOfBoundsException
+     *             if the number of required source bytes is larger than the
+     *             length of this buffer
+     */
+    public void fetchToHost(float[] array) throws CudaException {
+        fetchToHost(array, 0, array.length);
+    }
+
+    /**
+     * Copies data from this buffer (on the device) to the specified
+     * {@code array} (on the Java host). Elements are read starting at the
+     * beginning of this buffer and stored in {@code array} beginning at
+     * {@code fromIndex} continuing up to, but excluding, {@code toIndex}.
+     * <p>
+     * A sub-buffer may be created (see {@link #atOffset(long)}) when the source
+     * data are not located at the beginning of this buffer.
+     *
+     * @param array
+     *            the destination array
+     * @param fromIndex
+     *            the destination starting offset (inclusive)
+     * @param toIndex
+     *            the destination ending offset (exclusive)
+     * @throws CudaException
+     *             if a CUDA exception occurs
+     * @throws IllegalArgumentException
+     *             if {@code fromIndex > toIndex}
+     * @throws IllegalStateException
+     *             if this buffer has been closed (see {@link #close()})
+     * @throws IndexOutOfBoundsException
+     *             if {@code fromIndex} is negative,
+     *             {@code toIndex > array.length}, or the number of required
+     *             source bytes is larger than the length of this buffer
+     */
+    public void fetchToHost(float[] array, int fromIndex, int toIndex) throws CudaException {
+        rangeCheck(array.length, fromIndex, toIndex);
+        lengthCheck(toIndex - fromIndex, 2);
+        // copyToHostFloat(deviceId, getAddress(), array, fromIndex, toIndex);
+        // // TODO
     }
 
     private void lengthCheck(long elementCount, int logBase2UnitSize) {
