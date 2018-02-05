@@ -33,6 +33,11 @@ public final class ParamsBuilder {
         return params.check();
     }
 
+    private ParamsBuilder set(int index, Address address) {
+        params.set(index, address);
+        return this;
+    }
+
     /**
      * Replaces the parameter at the specified index with the given long value.
      *
@@ -46,8 +51,7 @@ public final class ParamsBuilder {
      *             the parameter list
      */
     public ParamsBuilder set(int index, long value) {
-        params.set(index, value);
-        return this;
+        return set(index, Addresses.of(params, value, null));
     }
 
     /**
@@ -89,17 +93,17 @@ public final class ParamsBuilder {
      *
      * @param index
      *            the index of the parameter to be set
-     * @param value
-     *            the value to be passed when the kernel is launched, or null to
-     *            pass a null pointer
+     * @param deviceBuffer
+     *            the device memory buffer to be passed when the kernel is
+     *            launched, or null to pass a null pointer
      * @return this builder
      * @throws IndexOutOfBoundsException
      *             if {@code index} &lt; 0 or {@code index} &gt;= the size of
      *             the parameter list
      */
-    // public ParamsBuilder set(int index, CudaBuffer value) { // XXX
-    // return set(index, value == null ? 0L : value.getAddress());
-    // } // TODO CudaBuffer
+    public ParamsBuilder set(int index, DeviceMemory deviceBuffer) {
+        return set(index, (deviceBuffer == null) ? Addresses.of(null, 0L, null) : deviceBuffer.getAddress());
+    }
 
     /**
      * Replaces the parameter at the specified index with the given double

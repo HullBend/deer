@@ -29,7 +29,7 @@ public final class KernelParams {
      */
     private long mask;
 
-    /* package */ final long[] values;
+    private final Address[] values;
 
     /**
      * Creates a copy of the given parameter block.
@@ -53,10 +53,14 @@ public final class KernelParams {
     KernelParams(int count) {
         if (0 <= count && count <= Long.SIZE) {
             this.mask = (count == Long.SIZE) ? -1L : (1L << count) - 1;
-            this.values = new long[count];
+            this.values = new Address[count];
         } else {
             throw new IllegalArgumentException("count: " + count);
         }
+    }
+
+    Address[] getValues() {
+        return values;
     }
 
     boolean isComplete() {
@@ -71,7 +75,8 @@ public final class KernelParams {
     }
 
     /**
-     * Replaces the parameter at the specified index with the given long value.
+     * Replaces the parameter at the specified index with the given address
+     * value.
      *
      * @param index
      *            the index of the parameter to be set
@@ -81,7 +86,10 @@ public final class KernelParams {
      *             if {@code index} &lt; 0 or {@code index} &gt;= the size of
      *             this parameter list
      */
-    void set(int index, long value) {
+    void set(int index, Address value) {
+        if (value == null) {
+            throw new IllegalArgumentException("null value at index " + index);
+        }
         if (0 <= index && index < values.length) {
             mask &= ~(1L << index);
             values[index] = value;
