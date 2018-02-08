@@ -80,8 +80,8 @@ final class Addresses {
         @Override
         public int hashCode() {
             int h = 0x7FFFF + (int) (address ^ (address >>> 32));
-            h = (h << 19) - h + deviceId;
-            return (h << 19) - h + System.identityHashCode(referent);
+            h = (h << 19) - h + System.identityHashCode(referent);
+            return (h << 19) - h + deviceId;
         }
 
         /**
@@ -94,7 +94,7 @@ final class Addresses {
             }
             if (otherAddress instanceof AddressImpl) {
                 AddressImpl o = (AddressImpl) otherAddress;
-                return address == o.address && deviceId == o.deviceId && referent == o.referent;
+                return address == o.address && referent == o.referent && deviceId == o.deviceId;
             }
             return false;
         }
@@ -106,8 +106,8 @@ final class Addresses {
         public String toString() {
             StringBuilder buf = new StringBuilder(128);
             return buf.append("[Address: ").append(address).append(" @").append(System.identityHashCode(referent))
-                    .append(" device: ").append(deviceId)
-                    .append(" , ").append((referent == null) ? "null" : referent.toString()).append(" , closed: ")
+                    .append(" device: ").append(deviceId).append(" , ")
+                    .append((referent == null) ? "null" : referent.toString()).append(" , closed: ")
                     .append(isClosed.get()).append(" ]").toString();
         }
 
