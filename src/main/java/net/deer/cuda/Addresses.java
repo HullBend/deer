@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 final class Addresses {
 
-    /* package */static Address of(Object referent, long address, Cleaner deallocatorFunction, int deviceId) {
+    /* package */static Address of(Object referent, long address, CleanerFunction deallocatorFunction, int deviceId) {
         return AddressImpl.create(address, referent, deallocatorFunction, deviceId);
     }
 
@@ -23,7 +23,7 @@ final class Addresses {
             // no effect). The problem in the latter case is that we don't know
             // whether the *real* base buffer is already closed (because we
             // don't know its identity)
-            // TODO: we probably need an additonal *parent* reference to the
+            // TODO: we probably need an additional *parent* reference to the
             // root of the slice hierarchy!
             throw new IllegalArgumentException("Address is already closed: " + base.toString());
         }
@@ -36,10 +36,10 @@ final class Addresses {
         private final int deviceId;
         private final long address;
         private final Object referent;
-        private final Cleaner cleaner;
+        private final CleanerFunction cleaner;
         private final AtomicBoolean isClosed = new AtomicBoolean();
 
-        private AddressImpl(long address, Object referent, Cleaner deallocatorFunction, int deviceId) {
+        private AddressImpl(long address, Object referent, CleanerFunction deallocatorFunction, int deviceId) {
             this.deviceId = deviceId;
             this.address = address;
             this.referent = referent;
@@ -111,7 +111,7 @@ final class Addresses {
                     .append(isClosed.get()).append(" ]").toString();
         }
 
-        static AddressImpl create(long address, Object referent, Cleaner deallocatorFunction, int deviceId) {
+        static AddressImpl create(long address, Object referent, CleanerFunction deallocatorFunction, int deviceId) {
             return new AddressImpl(address, referent, deallocatorFunction, deviceId);
         }
     }

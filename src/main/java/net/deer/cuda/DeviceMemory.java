@@ -51,7 +51,7 @@ public final class DeviceMemory implements AutoCloseable {
 
     // TODO: it's probably better to include the deviceId in the Address
     // object!?!
-    private static final class CudaFreeCleaner implements Cleaner {
+    private static final class CudaFreeCleaner implements CleanerFunction {
         private final int deviceId;
 
         CudaFreeCleaner(int deviceId) {
