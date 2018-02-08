@@ -4,8 +4,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 final class Addresses {
 
-    /* package */static Address of(Object referent, long address, Cleaner deallocatorFunction) {
-        return AddressImpl.create(address, referent, deallocatorFunction);
+    /* package */static Address of(Object referent, long address, Cleaner deallocatorFunction, int deviceId) {
+        return AddressImpl.create(address, referent, deallocatorFunction, deviceId);
     }
 
     // A sliced address has no cleaner since it is always the base address that
@@ -15,7 +15,7 @@ final class Addresses {
         // We have to keep the base reference reachable until the very end of
         // this method, therefore construct the sliced address **before** the
         // final check
-        Address sliced = AddressImpl.create(base.address + offset, shadowReferent, null);
+        Address sliced = AddressImpl.create(base.address + offset, shadowReferent, null, base.deviceId);
         if (base.cleaner != null && base.isClosed.get()) {
             // This is an attempt to create a slice from a base buffer that has
             // already been closed. It doesn't matter when the base is a sliced
@@ -31,15 +31,16 @@ final class Addresses {
     }
 
     // TODO:
-    // 1) add deviceId
-    // 2) add reference to the root
+    // 1) add reference to the root
     private static final class AddressImpl implements Address {
+        private final int deviceId;
         private final long address;
         private final Object referent;
         private final Cleaner cleaner;
         private final AtomicBoolean isClosed = new AtomicBoolean();
 
-        private AddressImpl(long address, Object referent, Cleaner deallocatorFunction) {
+        private AddressImpl(long address, Object referent, Cleaner deallocatorFunction, int deviceId) {
+            this.deviceId = deviceId;
             this.address = address;
             this.referent = referent;
             this.cleaner = deallocatorFunction;
@@ -79,6 +80,7 @@ final class Addresses {
         @Override
         public int hashCode() {
             int h = 0x7FFFF + (int) (address ^ (address >>> 32));
+            h = (h << 19) - h + deviceId;
             return (h << 19) - h + System.identityHashCode(referent);
         }
 
@@ -92,7 +94,7 @@ final class Addresses {
             }
             if (otherAddress instanceof AddressImpl) {
                 AddressImpl o = (AddressImpl) otherAddress;
-                return address == o.address && referent == o.referent;
+                return address == o.address && deviceId == o.deviceId && referent == o.referent;
             }
             return false;
         }
@@ -104,12 +106,13 @@ final class Addresses {
         public String toString() {
             StringBuilder buf = new StringBuilder(128);
             return buf.append("[Address: ").append(address).append(" @").append(System.identityHashCode(referent))
-                    .append(" ").append((referent == null) ? "null" : referent.toString()).append(" , closed: ")
+                    .append(" device: ").append(deviceId)
+                    .append(" , ").append((referent == null) ? "null" : referent.toString()).append(" , closed: ")
                     .append(isClosed.get()).append(" ]").toString();
         }
 
-        static AddressImpl create(long address, Object referent, Cleaner deallocatorFunction) {
-            return new AddressImpl(address, referent, deallocatorFunction);
+        static AddressImpl create(long address, Object referent, Cleaner deallocatorFunction, int deviceId) {
+            return new AddressImpl(address, referent, deallocatorFunction, deviceId);
         }
     }
 

@@ -77,8 +77,8 @@ public final class DeviceMemory implements AutoCloseable {
      */
     public DeviceMemory(GPUDevice device, long byteCount) throws CudaException {
         this.deviceId = device.getDeviceId();
-        this.memoryAddress = Addresses.of(this, cudaMallocN(this.deviceId, byteCount),
-                new CudaFreeCleaner(this.deviceId));
+        this.memoryAddress = Addresses.of(this, cudaMallocN(deviceId, byteCount),
+                new CudaFreeCleaner(deviceId), deviceId);
         this.length = byteCount;
         this.root = null;
     }

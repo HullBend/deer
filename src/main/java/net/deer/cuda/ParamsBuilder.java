@@ -51,7 +51,7 @@ public final class ParamsBuilder {
      *             the parameter list
      */
     public ParamsBuilder set(int index, long value) {
-        return set(index, Addresses.of(params, value, null));
+        return set(index, Addresses.of(params, value, null, -1));
     }
 
     /**
@@ -102,7 +102,7 @@ public final class ParamsBuilder {
      *             the parameter list
      */
     public ParamsBuilder set(int index, DeviceMemory deviceBuffer) {
-        return set(index, (deviceBuffer == null) ? Addresses.of(params, 0L, null) : deviceBuffer.getAddress());
+        return set(index, (deviceBuffer == null) ? Addresses.of(params, 0L, null, -1) : deviceBuffer.getAddress());
     }
 
     /**
