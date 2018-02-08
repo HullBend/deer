@@ -38,9 +38,31 @@ public final class DeviceMemory implements AutoCloseable {
 
     private final long length;
 
-    private final DeviceMemory parent;
+    private final DeviceMemory root;
 
     private final Address memoryAddress;
+
+    private static native long cudaMallocN(int deviceId, long byteCount) throws CudaException;
+
+    // TODO: do we really want to throw from native free()?
+    // that's not entirely consistent with the assumptions made in
+    // AddressImpl#close()
+    private static native long cudaFreeN(int deviceId, Address memoryAddress) throws CudaException;
+
+    // TODO: it's probably better to include the deviceId in the Address
+    // object!?!
+    private static final class CudaFreeCleaner implements Cleaner {
+        private final int deviceId;
+
+        CudaFreeCleaner(int deviceId) {
+            this.deviceId = deviceId;
+        }
+
+        @Override
+        public long applyAsLong(Address value) throws CudaException {
+            return cudaFreeN(deviceId, value);
+        }
+    }
 
     /**
      * Allocates a new region on the specified {@code device} of size
@@ -55,23 +77,28 @@ public final class DeviceMemory implements AutoCloseable {
      */
     public DeviceMemory(GPUDevice device, long byteCount) throws CudaException {
         this.deviceId = device.getDeviceId();
-        this.memoryAddress = null; // TODO new
-                                    // AtomicLong(allocate(this.deviceId,
-                                    // byteCount));
+        this.memoryAddress = Addresses.of(this, cudaMallocN(this.deviceId, byteCount),
+                new CudaFreeCleaner(this.deviceId));
         this.length = byteCount;
-        this.parent = null;
+        this.root = null;
     }
 
-    private DeviceMemory(DeviceMemory parent, int deviceId, long byteOffset, long length) {
+    private DeviceMemory(DeviceMemory parent, int deviceId, Address parentAddress, long fromOffset, long length) {
         this.deviceId = deviceId;
-        this.memoryAddress = null; // TODO new AtomicLong(byteOffset);
+        this.memoryAddress = Addresses.slice(this, parentAddress, fromOffset);
         this.length = length;
-        this.parent = parent;
+        this.root = parent;
     }
 
     Address getAddress() {
-        // TODO
-        throw new UnsupportedOperationException();
+        if ((root == null || !root.memoryAddress.isClosed()) && !memoryAddress.isClosed()) {
+            return memoryAddress;
+        }
+        try {
+            memoryAddress.close();
+        } catch (Exception ignore) {
+        }
+        throw new IllegalStateException("Root address or this address is already closed (or both)");
     }
 
     /**
@@ -91,8 +118,7 @@ public final class DeviceMemory implements AutoCloseable {
      */
     @Override
     public void close() throws Exception {
-        // TODO
-        throw new UnsupportedOperationException();
+        memoryAddress.close();
     }
 
     /**
@@ -116,15 +142,15 @@ public final class DeviceMemory implements AutoCloseable {
      *             this buffer
      */
     public DeviceMemory slice(long fromOffset, long toOffset) {
-        if (fromOffset == 0 && toOffset == length) {
+        if (fromOffset == 0L && toOffset == length) {
             return this;
         } else {
             rangeCheck(length, fromOffset, toOffset);
-
             return new DeviceMemory( // <br>
-                    parent != null ? parent : this, // <br>
+                    (root != null) ? root : this, // <br>
                     deviceId, // <br>
-                    -123456789L, // <br> //(getAddress() + fromOffset), // TODO
+                    getAddress(), // <br>
+                    fromOffset, // <br>
                     (toOffset - fromOffset)); // <br>
         }
     }
@@ -189,6 +215,7 @@ public final class DeviceMemory implements AutoCloseable {
     public void transferToDevice(float[] array, int fromIndex, int toIndex) throws CudaException {
         rangeCheck(array.length, fromIndex, toIndex);
         lengthCheck(toIndex - fromIndex, 2);
+        // copyToDeviceN()
         // copyFromHostFloat(deviceId, getAddress(), array, fromIndex, toIndex);
         // // TODO
     }
@@ -244,6 +271,7 @@ public final class DeviceMemory implements AutoCloseable {
     public void fetchToHost(float[] array, int fromIndex, int toIndex) throws CudaException {
         rangeCheck(array.length, fromIndex, toIndex);
         lengthCheck(toIndex - fromIndex, 2);
+        // copyToHostFloatN()
         // copyToHostFloat(deviceId, getAddress(), array, fromIndex, toIndex);
         // // TODO
     }

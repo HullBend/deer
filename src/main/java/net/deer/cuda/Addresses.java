@@ -8,6 +8,31 @@ final class Addresses {
         return AddressImpl.create(address, referent, deallocatorFunction);
     }
 
+    // A sliced address has no cleaner since it is always the base address that
+    // must be closed natively (i.e., the root *not* the immediate parent)
+    /* package */static Address slice(Object shadowReferent, Address parent, long offset) {
+        AddressImpl base = (AddressImpl) parent;
+        // We have to keep the base reference reachable until the very end of
+        // this method, therefore construct the sliced address **before** the
+        // final check
+        Address sliced = AddressImpl.create(base.address + offset, shadowReferent, null);
+        if (base.cleaner != null && base.isClosed.get()) {
+            // This is an attempt to create a slice from a base buffer that has
+            // already been closed. It doesn't matter when the base is a sliced
+            // buffer (cleaner == null) that has already been closed (which has
+            // no effect). The problem in the latter case is that we don't know
+            // whether the *real* base buffer is already closed (because we
+            // don't know its identity)
+            // TODO: we probably need an additonal *parent* reference to the
+            // root of the slice hierarchy!
+            throw new IllegalArgumentException("Address is already closed: " + base.toString());
+        }
+        return sliced;
+    }
+
+    // TODO:
+    // 1) add deviceId
+    // 2) add reference to the root
     private static final class AddressImpl implements Address {
         private final long address;
         private final Object referent;

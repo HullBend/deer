@@ -14,5 +14,5 @@ interface ToLongFunction<T> {
      *            the function argument
      * @return the function result
      */
-    long applyAsLong(T value);
+    long applyAsLong(T value) throws CudaException;
 }
