@@ -49,20 +49,12 @@ public final class DeviceMemory implements AutoCloseable {
     // AddressImpl#close()
     private static native long cudaFreeN(int deviceId, Address memoryAddress) throws CudaException;
 
-    // TODO: it's probably better to include the deviceId in the Address
-    // object!?!
-    private static final class CudaFreeCleaner implements CleanerFunction {
-        private final int deviceId;
-
-        CudaFreeCleaner(int deviceId) {
-            this.deviceId = deviceId;
-        }
-
+    private static final Cleaner cudaFreeCleaner = new Cleaner() {
         @Override
-        public long applyAsLong(Address value) throws CudaException {
-            return cudaFreeN(deviceId, value);
+        public long release(int deviceId, Address address) throws CudaException {
+            return cudaFreeN(deviceId, address);
         }
-    }
+    };
 
     /**
      * Allocates a new region on the specified {@code device} of size
@@ -78,7 +70,7 @@ public final class DeviceMemory implements AutoCloseable {
     public DeviceMemory(GPUDevice device, long byteCount) throws CudaException {
         this.deviceId = device.getDeviceId();
         this.memoryAddress = Addresses.of(this, cudaMallocN(deviceId, byteCount),
-                new CudaFreeCleaner(deviceId), deviceId);
+                cudaFreeCleaner, deviceId);
         this.length = byteCount;
         this.root = null;
     }

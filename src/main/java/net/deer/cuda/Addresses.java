@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 final class Addresses {
 
-    /* package */static Address of(Object referent, long address, CleanerFunction deallocatorFunction, int deviceId) {
+    /* package */static Address of(Object referent, long address, Cleaner deallocatorFunction, int deviceId) {
         return AddressImpl.create(address, referent, deallocatorFunction, deviceId);
     }
 
@@ -36,10 +36,10 @@ final class Addresses {
         private final int deviceId;
         private final long address;
         private final Object referent;
-        private final CleanerFunction cleaner;
+        private final Cleaner cleaner;
         private final AtomicBoolean isClosed = new AtomicBoolean();
 
-        private AddressImpl(long address, Object referent, CleanerFunction deallocatorFunction, int deviceId) {
+        private AddressImpl(long address, Object referent, Cleaner deallocatorFunction, int deviceId) {
             this.deviceId = deviceId;
             this.address = address;
             this.referent = referent;
@@ -61,7 +61,7 @@ final class Addresses {
 
         private long tryClose() {
             if (cleaner != null) {
-                return cleaner.applyAsLong(this);
+                return cleaner.release(deviceId, this);
             }
             return 0L;
         }
@@ -111,7 +111,7 @@ final class Addresses {
                     .append(isClosed.get()).append(" ]").toString();
         }
 
-        static AddressImpl create(long address, Object referent, CleanerFunction deallocatorFunction, int deviceId) {
+        static AddressImpl create(long address, Object referent, Cleaner deallocatorFunction, int deviceId) {
             return new AddressImpl(address, referent, deallocatorFunction, deviceId);
         }
     }
