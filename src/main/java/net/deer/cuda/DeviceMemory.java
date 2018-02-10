@@ -47,6 +47,12 @@ public final class DeviceMemory implements AutoCloseable {
     // never throw an exception
     private static native long cudaFreeN(Address memoryAddress);
 
+    private static native void cudaMemcpyHostToDeviceN(Address address, float[] array, int fromIndex, int toIndex)
+            throws CudaException;
+
+    private static native void cudaMemcpyDeviceToHostN(Address address, float[] array, int fromIndex, int toIndex)
+            throws CudaException;
+
     private static final Cleaner cudaFreeCleaner = new Cleaner() {
         @Override
         public long release(Address address) throws CudaException {
@@ -67,8 +73,7 @@ public final class DeviceMemory implements AutoCloseable {
      */
     public DeviceMemory(GPUDevice device, long byteCount) throws CudaException {
         this.deviceId = device.getDeviceId();
-        this.memoryAddress = Addresses.of(this, cudaMallocN(deviceId, byteCount),
-                cudaFreeCleaner, deviceId);
+        this.memoryAddress = Addresses.of(this, cudaMallocN(deviceId, byteCount), cudaFreeCleaner, deviceId);
         this.length = byteCount;
         this.root = null;
     }
@@ -205,9 +210,7 @@ public final class DeviceMemory implements AutoCloseable {
     public void transferToDevice(float[] array, int fromIndex, int toIndex) throws CudaException {
         rangeCheck(array.length, fromIndex, toIndex);
         lengthCheck(toIndex - fromIndex, 2);
-        // copyToDeviceN()
-        // copyFromHostFloat(deviceId, getAddress(), array, fromIndex, toIndex);
-        // // TODO
+        cudaMemcpyHostToDeviceN(getAddress(), array, fromIndex, toIndex);
     }
 
     /**
@@ -261,9 +264,7 @@ public final class DeviceMemory implements AutoCloseable {
     public void fetchToHost(float[] array, int fromIndex, int toIndex) throws CudaException {
         rangeCheck(array.length, fromIndex, toIndex);
         lengthCheck(toIndex - fromIndex, 2);
-        // copyToHostFloatN()
-        // copyToHostFloat(deviceId, getAddress(), array, fromIndex, toIndex);
-        // // TODO
+        cudaMemcpyDeviceToHostN(getAddress(), array, fromIndex, toIndex);
     }
 
     private void lengthCheck(long elementCount, int logBase2UnitSize) {
