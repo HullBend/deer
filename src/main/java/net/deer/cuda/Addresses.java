@@ -5,44 +5,40 @@ import java.util.concurrent.atomic.AtomicBoolean;
 final class Addresses {
 
     /* package */static Address of(Object referent, long address, Cleaner deallocatorFunction, int deviceId) {
-        return AddressImpl.create(address, referent, deallocatorFunction, deviceId);
+        return AddressImpl.create(address, referent, deallocatorFunction, null, deviceId);
     }
 
-    // A sliced address has no cleaner since it is always the base address that
-    // must be closed natively (i.e., the root *not* the immediate parent)
+    // A sliced address has no cleaner since it is always the primordial root
+    // address that must be closed natively
     /* package */static Address slice(Object shadowReferent, Address parent, long offset) {
         AddressImpl base = (AddressImpl) parent;
+        Address root = (base.root != null) ? base.root : parent;
         // We have to keep the base reference reachable until the very end of
-        // this method, therefore construct the sliced address **before** the
-        // final check
-        Address sliced = AddressImpl.create(base.address + offset, shadowReferent, null, base.deviceId);
-        if (base.cleaner != null && base.isClosed.get()) {
-            // This is an attempt to create a slice from a base buffer that has
-            // already been closed. It doesn't matter when the base is a sliced
-            // buffer (cleaner == null) that has already been closed (which has
-            // no effect). The problem in the latter case is that we don't know
-            // whether the *real* base buffer is already closed (because we
-            // don't know its identity)
-            // TODO: we probably need an additional *parent* reference to the
-            // root of the slice hierarchy!
-            throw new IllegalArgumentException("Address is already closed: " + base.toString());
+        // this method, therefore construct the sliced address *before* the
+        // final check and ReachabilityFence
+        Address sliced = AddressImpl.create(base.address + offset, shadowReferent, null, root, base.deviceId);
+        if (root.isClosed()) {
+            // This is an attempt to create a slice from a root buffer that has
+            // already been closed.
+            throw new IllegalArgumentException("Root address is already closed: " + root.toString());
         }
+        ReachabilityFence.protect(base);
         return sliced;
     }
 
-    // TODO:
-    // 1) add reference to the root
     private static final class AddressImpl implements Address {
         private final int deviceId;
         private final long address;
         private final Object referent;
+        private final Address root;
         private final Cleaner cleaner;
         private final AtomicBoolean isClosed = new AtomicBoolean();
 
-        private AddressImpl(long address, Object referent, Cleaner deallocatorFunction, int deviceId) {
+        private AddressImpl(long address, Object referent, Cleaner deallocatorFunction, Address root, int deviceId) {
             this.deviceId = deviceId;
             this.address = address;
             this.referent = referent;
+            this.root = root;
             this.cleaner = deallocatorFunction;
         }
 
@@ -61,7 +57,7 @@ final class Addresses {
 
         private long tryClose() {
             if (cleaner != null) {
-                return cleaner.release(deviceId, this);
+                return cleaner.release(this);
             }
             return 0L;
         }
@@ -111,8 +107,9 @@ final class Addresses {
                     .append(isClosed.get()).append(" ]").toString();
         }
 
-        static AddressImpl create(long address, Object referent, Cleaner deallocatorFunction, int deviceId) {
-            return new AddressImpl(address, referent, deallocatorFunction, deviceId);
+        static AddressImpl create(long address, Object referent, Cleaner deallocatorFunction, Address root,
+                int deviceId) {
+            return new AddressImpl(address, referent, deallocatorFunction, root, deviceId);
         }
     }
 

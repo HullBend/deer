@@ -47,12 +47,12 @@ public final class DeviceMemory implements AutoCloseable {
     // TODO: do we really want to throw from native free()?
     // that's not entirely consistent with the assumptions made in
     // AddressImpl#close()
-    private static native long cudaFreeN(int deviceId, Address memoryAddress) throws CudaException;
+    private static native long cudaFreeN(Address memoryAddress) throws CudaException;
 
     private static final Cleaner cudaFreeCleaner = new Cleaner() {
         @Override
-        public long release(int deviceId, Address address) throws CudaException {
-            return cudaFreeN(deviceId, address);
+        public long release(Address address) throws CudaException {
+            return cudaFreeN(address);
         }
     };
 
