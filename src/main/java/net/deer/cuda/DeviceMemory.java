@@ -45,7 +45,7 @@ public final class DeviceMemory implements AutoCloseable {
     private static native long cudaMallocN(int deviceId, long byteCount) throws CudaException;
 
     // never throw an exception
-    private static native long cudaFreeN(Address memoryAddress);
+    private static native long cudaFreeN(Address address);
 
     private static native void cudaMemcpyHostToDeviceN(Address address, float[] array, int fromIndex, int toIndex)
             throws CudaException;
