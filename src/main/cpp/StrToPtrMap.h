@@ -33,11 +33,6 @@ public:
 
     bool containsKey(const char* pszKey) const; // check for existence of key
 
-    // Debug helpers
-    //unsigned int getIndex(const char* pszKey) const;
-    //unsigned int getOccupation(unsigned int nIndex) const;
-    //int getValue(unsigned int nIndex, void*& rValue) const;
-
 private:
 
     // declarations
