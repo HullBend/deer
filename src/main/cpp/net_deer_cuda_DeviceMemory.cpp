@@ -31,8 +31,8 @@ JNIEXPORT jlong JNICALL Java_net_deer_cuda_DeviceMemory_cudaMallocN
   (JNIEnv* env, jclass /*clazz*/, jint deviceId, jlong byteCount)
 {
     Context* pCtx = getContext(env);
-//  Context* pCtx = static_cast<Context*>(env);
     void* d_address = NULL;
+//  jlong test = toJavaLong(d_address);
     return 0L;
 }
 
@@ -46,7 +46,6 @@ JNIEXPORT jlong JNICALL Java_net_deer_cuda_DeviceMemory_cudaFreeN
   (JNIEnv* env, jclass /*clazz*/, jobject addr)
 {
     Context* pCtx = getContext(env);
-//  Context* pCtx = static_cast<Context*>(env);
     int deviceId = getDeviceId(pCtx, addr);
     void* d_address = getAddress(pCtx, addr);
     return 0L;
@@ -62,9 +61,8 @@ JNIEXPORT void JNICALL Java_net_deer_cuda_DeviceMemory_cudaMemcpyHostToDeviceN
   (JNIEnv* env, jclass /*clazz*/, jobject addr, jfloatArray array, jint fromIndex, jint toIndex)
 {
     Context* pCtx = getContext(env);
-//  Context* pCtx = static_cast<Context*>(env);
     int deviceId = getDeviceId(pCtx, addr);
-    void* address = getAddress(pCtx, addr); // TODO: device or host?
+    void* d_address = getAddress(pCtx, addr);
 }
 
 
@@ -77,10 +75,8 @@ JNIEXPORT void JNICALL Java_net_deer_cuda_DeviceMemory_cudaMemcpyDeviceToHostN
   (JNIEnv* env, jclass /*clazz*/, jobject addr, jfloatArray array, jint fromIndex, jint toIndex)
 {
     Context* pCtx = getContext(env);
-//  Context* pCtx = static_cast<Context*>(env);
-//  jlong test = toJavaLong(pCtx);
     int deviceId = getDeviceId(pCtx, addr);
-    void* address = getAddress(pCtx, addr); // TODO: device or host?
+    void* d_address = getAddress(pCtx, addr);
 }
 
 
