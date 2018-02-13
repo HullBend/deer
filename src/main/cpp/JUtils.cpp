@@ -21,9 +21,9 @@
 //#include "Logger.h"
 //#endif /* LOGGER_INCLUDED_ */
 
-//#ifndef NAMECONSTANTS_INCLUDED_
-//#include "NameConstants.h"
-//#endif /* NAMECONSTANTS_INCLUDED_ */
+#ifndef NAMECONSTANTS_INCLUDED_
+#include "NameConstants.h"
+#endif /* NAMECONSTANTS_INCLUDED_ */
 
 
 
