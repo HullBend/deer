@@ -22,3 +22,4 @@ int __stdcall DllMain(HMODULE /*hModule*/, unsigned long ul_reason_for_call, voi
     return TRUE;
 }
 
+#endif /* (_WIN64) || (_WIN32) */
