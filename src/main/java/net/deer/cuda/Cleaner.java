@@ -2,6 +2,6 @@ package net.deer.cuda;
 
 public interface Cleaner {
 
-    // Return 0L on success, never throw an exception
+    // Returns 0L on success, must never throw an exception!
     long release(Address address);
 }
