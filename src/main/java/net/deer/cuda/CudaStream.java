@@ -29,7 +29,34 @@ package net.deer.cuda;
  */
 public final class CudaStream implements AutoCloseable {
 
+    /**
+     * Default stream creation flag.
+     */
+    public static final int FLAG_DEFAULT = 0;
+
+    /**
+     * Stream creation flag requesting no implicit synchronization with the
+     * default stream.
+     */
+    public static final int FLAG_NON_BLOCKING = 1;
+
     // TODO ...
+
+    private final int deviceId;
+
+    /**
+     * Creates a new stream on the specified device, with the default flags
+     * and the default priority.
+     *
+     * @param device
+     *          the specified device
+     * @throws CudaException
+     *          if a CUDA exception occurs
+     */
+    public CudaStream(GPUDevice device) throws CudaException {
+        this.deviceId = device.getDeviceId();
+//      this.nativeHandle = new AtomicLong(create(this.deviceId)); // TODO
+    }
 
     /**
      * Closes this stream. Any work queued on this stream will be allowed to
